@@ -14,8 +14,9 @@ using Sitecore.StringExtensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Sitecore.Globalization;
 
-namespace Sitecore.ContentSearch.Client.Pipelines.Search
+namespace Sitecore.Support.ContentSearch.Client.Pipelines.Search
 {
   public class SearchContentSearchIndex
   {
@@ -72,9 +73,23 @@ namespace Sitecore.ContentSearch.Client.Pipelines.Search
                   }
                   if (queryable == null || Enumerable.Count(queryable) == 0)
                   {
-                    queryable = ((!(args.ContentLanguage != null) || args.ContentLanguage.Name.IsNullOrEmpty()) ? (from i in providerSearchContext.GetQueryable<SitecoreUISearchResultItem>()
-                                                                                                                   where i.Name.StartsWith(args.TextQuery) || i.Content.Contains(args.TextQuery)
-                                                                                                                   select i) : providerSearchContext.GetQueryable<SitecoreUISearchResultItem>().Where((SitecoreUISearchResultItem i) => i.Name.StartsWith(args.TextQuery) || (i.Content.Contains(args.TextQuery) && i.Language.Equals(args.ContentLanguage.Name))));
+                    if (args.ContentLanguage == null || args.ContentLanguage.Name.IsNullOrEmpty())
+                    {
+                      queryable = (from i in providerSearchContext.GetQueryable<SitecoreUISearchResultItem>()
+                        where i.Name.StartsWith(args.TextQuery) || i.Content.Contains(args.TextQuery)
+                        select i);
+                    }
+                    else
+                    {
+                      if (args.ContentLanguage.Name.StartsWith("ja"))
+                      {
+                        queryable = providerSearchContext.GetQueryable<SitecoreUISearchResultItem>().Where((SitecoreUISearchResultItem i) => i.Name.Equals(args.TextQuery) || (i.Content.Equals(args.TextQuery) && i.Language.Equals(args.ContentLanguage.Name)));
+                      }
+                      else
+                      {
+                        queryable = providerSearchContext.GetQueryable<SitecoreUISearchResultItem>().Where((SitecoreUISearchResultItem i) => i.Name.StartsWith(args.TextQuery) || (i.Content.Contains(args.TextQuery) && i.Language.Equals(args.ContentLanguage.Name)));
+                      }
+                    }
                   }
                   if (args.Root != null && args.Type != SearchType.ContentEditor)
                   {
